@@ -133,3 +133,31 @@ jobs:
           echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
           echo "docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:latest" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+  notifications:
+    steps:
+      - name: Discord Deployment Notification
+        if: success()
+        run: |
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          COMMIT_TITLE=$(echo "$COMMIT_MSG" | head -n 1)
+          
+          curl -H "Content-Type: application/json" \
+              -X POST \
+              -d '{
+                "username": "Music Bot CI/CD",
+                "avatar_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
+                "embeds": [{
+                  "title": "🚀 New Version Deployed",
+                  "description": "'"$COMMIT_TITLE"'",
+                  "color": 3066993,
+                  "fields": [
+                    {"name": "Commit", "value": "`${{ github.sha }}`", "inline": true},
+                    {"name": "Branch", "value": "`${{ github.ref_name }}`", "inline": true},
+                    {"name": "Author", "value": "${{ github.actor }}", "inline": true},
+                    {"name": "Image", "value": "`registry.ryein.kim/music-bot:latest`", "inline": false},
+                    {"name": "Pull Command", "value": "```bash\ndocker pull registry.ryein.kim/music-bot:latest\n```", "inline": false}
+                  ],
+                  "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
+                }]
+              }' \
+              ${{ secrets.DISCORD_WEBHOOK_URL }}
