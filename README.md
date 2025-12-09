@@ -39,21 +39,73 @@ Discord 음성 채널에서 YouTube 음악을 재생하는 기능이 풍부한 �
 ### 사전 요구사항
 - Python 3.11+
 - Discord Bot Token
-- FFmpeg (자동 감지 또는 번들 포함)
+- FFmpeg (플랫폼별 설치 필요)
 
 ### 1️⃣ 로컬 실행 (개발)
 
+#### Windows
 ```bash
 # 저장소 클론
 git clone https://github.com/YOUR_USERNAME/musicbot.git
 cd musicbot
 
+# FFmpeg 설치 (최초 1회)
+# 방법 1: Chocolatey 사용 (권장)
+choco install ffmpeg
+
+# 방법 2: 수동 다운로드
+# https://www.gyan.dev/ffmpeg/builds/
+# 다운로드 후 PATH에 추가
+
 # 가상환경 생성 및 활성화
-# Windows
 python -m venv .venv
 .venv\Scripts\activate
 
-# macOS/Linux
+# 의존성 설치
+pip install -r requirements.txt
+
+# 설정 파일 생성
+copy config.example.json config.json
+# config.json 편집하여 토큰 입력
+
+# 실행
+python musicbot.py
+```
+
+#### macOS
+```bash
+# 저장소 클론
+git clone https://github.com/YOUR_USERNAME/musicbot.git
+cd musicbot
+
+# FFmpeg 설치
+brew install ffmpeg
+
+# 가상환경 생성 및 활성화
+python3 -m venv .venv
+source .venv/bin/activate
+
+# 의존성 설치
+pip install -r requirements.txt
+
+# 설정 파일 생성
+cp config.example.json config.json
+# config.json 편집하여 토큰 입력
+
+# 실행
+python musicbot.py
+```
+
+#### Linux (Ubuntu/Debian)
+```bash
+# 저장소 클론
+git clone https://github.com/YOUR_USERNAME/musicbot.git
+cd musicbot
+
+# FFmpeg 설치
+sudo apt update && sudo apt install ffmpeg
+
+# 가상환경 생성 및 활성화
 python3 -m venv .venv
 source .venv/bin/activate
 

@@ -170,13 +170,10 @@ v*.py
 # FFmpeg (bundled binaries - optional)
 # ========================================
 
-# Windows용 FFmpeg는 포함하되, docs/include/lib는 제외
-ffmpeg/doc/
-ffmpeg/include/
-ffmpeg/lib/
-
-# macOS/Linux는 시스템 FFmpeg 사용하므로 제외
-# ffmpeg/
+# FFmpeg 바이너리 전체 제외 (GitHub 용량 제한)
+# 로컬 개발: Windows는 별도 다운로드, macOS/Linux는 시스템 FFmpeg 사용
+# Docker: Dockerfile에서 자동 설치
+ffmpeg/
 
 # ========================================
 # Docker

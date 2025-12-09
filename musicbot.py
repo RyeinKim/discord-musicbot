@@ -60,8 +60,17 @@ def get_current_track_title():
     return "현재 곡"
 
 def get_ffmpeg_executable():
+    """
+    FFmpeg 실행 파일 경로를 찾습니다.
+
+    우선순위:
+    1. 로컬 번들 (ffmpeg/bin/ffmpeg.exe) - Windows만
+    2. 시스템 PATH
+    3. 일반적인 설치 경로
+    """
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    # Windows 로컬 번들(ffmpeg/bin/ffmpeg.exe) 우선 사용
+
+    # Windows: 로컬 번들 FFmpeg 확인
     win_ffmpeg = os.path.join(base_dir, 'ffmpeg', 'bin', 'ffmpeg.exe')
     if os.name == 'nt' and os.path.isfile(win_ffmpeg):
         ffmpeg_dir = os.path.dirname(win_ffmpeg)
@@ -71,18 +80,24 @@ def get_ffmpeg_executable():
             os.environ['PATH'] = ffmpeg_dir + os.pathsep + current_path
         return win_ffmpeg
 
-    # macOS/Linux 등: 일반 경로 탐색
-    for candidate in [
-        '/opt/homebrew/bin/ffmpeg',
-        '/usr/local/bin/ffmpeg',
-        '/usr/bin/ffmpeg',
-        'ffmpeg',
-    ]:
-        path = shutil.which(candidate) if candidate == 'ffmpeg' else candidate
-        if path and (candidate == 'ffmpeg' or os.path.isfile(path)):
-            return path if candidate != 'ffmpeg' else path
+    # 모든 플랫폼: 시스템 FFmpeg 탐색
+    # PATH에서 먼저 찾기 (가장 우선)
+    system_ffmpeg = shutil.which('ffmpeg')
+    if system_ffmpeg:
+        return system_ffmpeg
 
-    # 최후 수단: 이름만 반환(실패 시 오류 메시지로 노출)
+    # 일반적인 설치 경로 확인
+    common_paths = [
+        '/opt/homebrew/bin/ffmpeg',  # macOS (Apple Silicon)
+        '/usr/local/bin/ffmpeg',     # macOS (Intel) / Linux
+        '/usr/bin/ffmpeg',           # Linux
+    ]
+
+    for path in common_paths:
+        if os.path.isfile(path):
+            return path
+
+    # 최후 수단: 이름만 반환 (실패 시 오류로 노출됨)
     return 'ffmpeg'
 
 FFMPEG_EXECUTABLE = get_ffmpeg_executable()
