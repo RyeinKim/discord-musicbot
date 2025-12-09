@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  discord-music-bot:
+    # Private Registry 이미지 사용
+    image: registry.ryein.kim/music-bot:latest
+    container_name: discord-music-bot
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # 설정 파일 마운트 (읽기 전용)
+      - ./config.json:/app/config.json:ro
+      # 로그 파일을 호스트에 마운트
+      - ./logs:/app/logs
+
+    # 로컬에서 빌드하려면 아래 주석 해제하고 image 라인 주석 처리
+    # build: .
+
+    # 네트워크 설정 (필요시)
+    # networks:
+    #   - bot-network
+
+# networks:
+#   bot-network:
+#     driver: bridge
+
