@@ -8,8 +8,13 @@ services:
     restart: unless-stopped
     environment:
       - PYTHONUNBUFFERED=1
+      # Option 1: 환경 변수로 설정 (권장 - 보안상 안전)
+      # - DISCORD_TOKEN=your_bot_token_here
+      # - COMMAND_PREFIX=!
+      # - OWNER_ID=your_discord_user_id
     volumes:
-      # 설정 파일 마운트 (읽기 전용)
+      # Option 2: config.json 파일 마운트 (읽기 전용)
+      # 환경 변수를 사용하지 않는 경우 아래 주석 해제
       - ./config.json:/app/config.json:ro
       # 로그 파일을 호스트에 마운트
       - ./logs:/app/logs

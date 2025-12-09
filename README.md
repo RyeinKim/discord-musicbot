@@ -39,7 +39,7 @@ Discord 음성 채널에서 YouTube 음악을 재생하는 기능이 풍부한 �
 ### 사전 요구사항
 - Python 3.11+
 - Discord Bot Token
-- FFmpeg (플랫폼별 설치 필요 - **[설치 가이드 보기](./FFMPEG_SETUP.md)**)
+- FFmpeg (플랫폼별 설치 필요 - **[설치 가이드 보기](#-ffmpeg-설치-가이드)**)
 
 ### 1️⃣ 로컬 실행 (개발)
 
@@ -123,10 +123,14 @@ python musicbot.py
 ### 2️⃣ Docker 실행 (권장)
 
 #### Docker Compose 사용
+
+**방법 1: 환경 변수 사용 (권장)**
 ```bash
-# config.json 생성
-cp config.example.json config.json
-# config.json 편집하여 토큰 입력
+# docker-compose.yml 편집하여 환경 변수 설정
+# environment 섹션의 주석을 해제하고 토큰 입력:
+#   - DISCORD_TOKEN=your_bot_token_here
+#   - COMMAND_PREFIX=!
+#   - OWNER_ID=your_discord_user_id
 
 # 실행
 docker-compose up -d
@@ -138,7 +142,19 @@ docker-compose logs -f
 docker-compose down
 ```
 
+**방법 2: config.json 파일 사용**
+```bash
+# config.json 생성
+cp config.example.json config.json
+# config.json 편집하여 토큰 입력
+
+# 실행
+docker-compose up -d
+```
+
 #### Docker 직접 실행
+
+**방법 1: 환경 변수 사용 (권장)**
 ```bash
 # 프라이빗 레지스트리 로그인
 docker login registry.ryein.kim
@@ -146,7 +162,24 @@ docker login registry.ryein.kim
 # 이미지 받기
 docker pull registry.ryein.kim/music-bot:latest
 
-# 실행
+# 환경 변수로 실행
+docker run -d \
+  --name musicbot \
+  --restart unless-stopped \
+  -e DISCORD_TOKEN=your_bot_token_here \
+  -e COMMAND_PREFIX=! \
+  -e OWNER_ID=your_discord_user_id \
+  -v $(pwd)/logs:/app/logs \
+  registry.ryein.kim/music-bot:latest
+```
+
+**방법 2: config.json 파일 마운트**
+```bash
+# config.json 생성
+cp config.example.json config.json
+# config.json 편집하여 토큰 입력
+
+# config.json 마운트하여 실행
 docker run -d \
   --name musicbot \
   --restart unless-stopped \
@@ -173,7 +206,34 @@ docker pull registry.ryein.kim/music-bot:main
 
 ## 🔧 설정
 
-### config.json
+봇은 두 가지 방식으로 설정할 수 있습니다:
+
+### 방법 1: 환경 변수 (권장)
+
+**우선순위가 가장 높으며, Docker 환경에서 권장되는 방식입니다.**
+
+```bash
+# 필수 환경 변수
+DISCORD_TOKEN=your_discord_bot_token_here
+
+# 선택 환경 변수
+COMMAND_PREFIX=!                    # 기본값: !
+OWNER_ID=your_discord_user_id      # 선택 사항
+```
+
+**Docker 사용 시:**
+```bash
+docker run -d \
+  -e DISCORD_TOKEN=your_token \
+  -e COMMAND_PREFIX=! \
+  -e OWNER_ID=your_user_id \
+  registry.ryein.kim/music-bot:latest
+```
+
+### 방법 2: config.json 파일
+
+**로컬 개발 환경에서 사용하기 편리한 방식입니다.**
+
 ```json
 {
   "token": "YOUR_DISCORD_BOT_TOKEN",
@@ -182,13 +242,14 @@ docker pull registry.ryein.kim/music-bot:main
 }
 ```
 
-### 환경 변수 (Docker)
-```bash
-# config.json 대신 환경 변수 사용 가능
-DISCORD_TOKEN=your_token_here
-COMMAND_PREFIX=!
-OWNER_ID=your_user_id
-```
+**설정 우선순위:**
+1. 환경 변수 (DISCORD_TOKEN, COMMAND_PREFIX, OWNER_ID)
+2. config.json 파일
+3. 둘 다 없으면 에러 발생
+
+**보안 권장사항:**
+- 환경 변수 사용 시: 토큰이 코드에 포함되지 않아 더 안전
+- config.json 사용 시: 반드시 `.gitignore`에 포함되어 있는지 확인
 
 ## 📦 CI/CD 파이프라인
 
@@ -203,33 +264,44 @@ CI/CD를 사용하기 전에 **GitHub Secrets 설정**이 필요합니다:
    - `DOCKER_REGISTRY_USERNAME` - Docker Registry 사용자명
    - `DOCKER_REGISTRY_PASSWORD` - Docker Registry 비밀번호/토큰
 
-**📖 자세한 설정 방법**: [GITHUB_SECRETS_SETUP.md](./GITHUB_SECRETS_SETUP.md) 참고
+**📖 자세한 설정 방법**: [GitHub Secrets 설정 가이드](#-github-secrets-설정-가이드) 참고
 
 ### CI/CD 파이프라인 구성
 
-### 자동화 작업
-1. **코드 품질 검사**
+**간소화된 2단계 파이프라인:**
+
+1. **코드 품질 검사 (Code Quality & Tests)**
    - Flake8 린트
    - Black 코드 포맷 검사
    - Python 문법 검증
 
-2. **Docker 이미지 빌드**
-   - Multi-platform 빌드 (amd64, arm64)
-   - GitHub Container Registry에 자동 푸시
-   - 태그 자동 생성 (latest, version, sha)
+2. **Docker 이미지 빌드 및 푸시 (Build & Push)**
+   - Multi-platform 빌드 (linux/amd64, linux/arm64)
+   - Private Docker Registry에 자동 푸시 (registry.ryein.kim)
+   - 태그 자동 생성 (latest, version, sha, branch)
 
-3. **보안 스캔**
-   - Trivy 취약점 스캐닝
-   - GitHub Security 통합
-
-4. **배포 알림**
-   - 빌드 상태 요약
-   - Docker 이미지 pull 명령어 제공
+**빌드된 이미지 특징:**
+- ✅ 범용 이미지 (토큰 없음)
+- ✅ FFmpeg 자동 설치 (apt-get)
+- ✅ 런타임에 환경 변수로 설정 주입
 
 ### 트리거
 - `main` 또는 `develop` 브랜치에 push
 - Pull Request 생성
 - Version 태그 생성 (`v*`)
+
+### 배포 방법
+
+빌드된 이미지는 **설정 정보가 포함되지 않은 범용 이미지**입니다.
+
+**실행 시 환경 변수로 설정:**
+```bash
+docker pull registry.ryein.kim/music-bot:latest
+docker run -d \
+  -e DISCORD_TOKEN=your_token \
+  -e COMMAND_PREFIX=! \
+  registry.ryein.kim/music-bot:latest
+```
 
 ## 🏗️ 프로젝트 구조
 
@@ -328,19 +400,193 @@ docker run -it --rm \
 
 이 프로젝트는 MIT 라이선스를 따릅니다.
 
+## 🎬 FFmpeg 설치 가이드
+
+Discord Music Bot을 로컬에서 실행하려면 FFmpeg가 필요합니다. **Docker를 사용하는 경우 자동으로 설치되므로 이 섹션을 건너뛰어도 됩니다.**
+
+### Windows 설치
+
+#### 방법 1: Chocolatey 사용 (권장)
+```powershell
+# Chocolatey가 설치되어 있지 않다면: https://chocolatey.org/install
+choco install ffmpeg
+
+# 설치 확인
+ffmpeg -version
+```
+
+#### 방법 2: Scoop 사용
+```powershell
+# Scoop이 설치되어 있지 않다면: https://scoop.sh
+scoop install ffmpeg
+
+# 설치 확인
+ffmpeg -version
+```
+
+#### 방법 3: 수동 다운로드
+1. **FFmpeg 다운로드**: https://www.gyan.dev/ffmpeg/builds/
+   - **ffmpeg-release-essentials.zip** 다운로드 (~100MB)
+2. **압축 해제**: `C:\ffmpeg`로 압축 해제
+3. **PATH 환경 변수 추가**:
+   - 시작 메뉴 → "환경 변수" 검색
+   - Path 변수 선택 → 편집 → `C:\ffmpeg\bin` 추가
+4. **확인**: 새 터미널에서 `ffmpeg -version`
+
+### macOS 설치
+
+```bash
+# Homebrew 사용 (권장)
+brew install ffmpeg
+
+# 설치 확인
+ffmpeg -version
+```
+
+### Linux 설치
+
+#### Ubuntu / Debian
+```bash
+sudo apt update
+sudo apt install ffmpeg
+
+# 설치 확인
+ffmpeg -version
+```
+
+#### Fedora / RHEL / CentOS
+```bash
+# RHEL/CentOS는 EPEL 저장소 활성화 필요
+sudo dnf install epel-release  # RHEL/CentOS만
+
+# FFmpeg 설치
+sudo dnf install ffmpeg
+
+# 설치 확인
+ffmpeg -version
+```
+
+#### Arch Linux
+```bash
+sudo pacman -S ffmpeg
+
+# 설치 확인
+ffmpeg -version
+```
+
+---
+
+## 🔐 GitHub Secrets 설정 가이드
+
+CI/CD 파이프라인이 프라이빗 Docker Registry에 접근하려면 GitHub Secrets를 설정해야 합니다.
+
+### 필요한 Secrets
+
+1. **`DOCKER_REGISTRY_USERNAME`** - Docker Registry 사용자명
+2. **`DOCKER_REGISTRY_PASSWORD`** - Docker Registry 비밀번호 또는 토큰
+
+### 설정 방법
+
+**1단계: GitHub 저장소 설정 페이지로 이동**
+1. GitHub에서 저장소 페이지 열기
+2. **Settings** 탭 클릭
+3. 왼쪽 사이드바에서 **Secrets and variables** → **Actions** 클릭
+
+**2단계: Repository Secrets 추가**
+
+*Secret 1: DOCKER_REGISTRY_USERNAME*
+1. **New repository secret** 버튼 클릭
+2. Name: `DOCKER_REGISTRY_USERNAME`
+3. Secret: Docker Registry 로그인 사용자명 입력
+4. **Add secret** 클릭
+
+*Secret 2: DOCKER_REGISTRY_PASSWORD*
+1. **New repository secret** 버튼 클릭
+2. Name: `DOCKER_REGISTRY_PASSWORD`
+3. Secret: Docker Registry 로그인 비밀번호 또는 토큰 입력
+4. **Add secret** 클릭
+
+**3단계: 설정 확인**
+
+설정이 완료되면 다음과 같이 표시됩니다:
+```
+Repository secrets:
+✓ DOCKER_REGISTRY_USERNAME
+✓ DOCKER_REGISTRY_PASSWORD
+```
+
+### 테스트
+
+설정 후 코드를 푸시하면 자동으로 CI/CD가 실행됩니다:
+```bash
+git add .
+git commit -m "Test CI/CD with private registry"
+git push origin main
+```
+
+GitHub Actions 탭에서 워크플로우 실행 상태를 확인할 수 있습니다.
+
+### 보안 권장사항
+
+1. **전용 토큰 사용**: 비밀번호 대신 Docker Registry 전용 액세스 토큰 생성
+2. **토큰 로테이션**: 정기적으로 토큰 갱신 (3~6개월마다)
+3. **접근 제한**: GitHub Actions에만 필요한 최소 권한 부여
+4. **감사 로그 확인**: Docker Registry 접근 로그 정기 확인
+
+**🔐 보안 주의사항**: Secret 값은 절대 코드에 하드코딩하거나 로그에 출력하지 마세요!
+
+---
+
 ## 🐛 문제 해결
 
-### FFmpeg를 찾을 수 없음
-- **Windows**: `ffmpeg/bin/` 디렉토리에 FFmpeg 바이너리 확인
-- **macOS**: `brew install ffmpeg`
-- **Linux**: `sudo apt-get install ffmpeg`
+### FFmpeg 관련 오류
+
+#### "ffmpeg: command not found" 또는 "ffmpeg을 찾을 수 없음"
+
+**Windows:**
+```powershell
+# FFmpeg 경로 확인
+where.exe ffmpeg
+
+# 없으면 위의 FFmpeg 설치 가이드 참고
+```
+
+**macOS/Linux:**
+```bash
+# FFmpeg 경로 확인
+which ffmpeg
+
+# 없으면 위의 FFmpeg 설치 가이드 참고
+```
+
+#### Discord Bot 실행 시 "FFmpeg를 찾을 수 없습니다" 오류
+
+1. **시스템 FFmpeg 확인**: `ffmpeg -version`
+2. **Python에서 확인**:
+   ```python
+   import shutil
+   print(shutil.which('ffmpeg'))
+   ```
+3. **봇 로그 확인**: "Using FFmpeg executable: /usr/bin/ffmpeg" 메시지 확인
+
+#### Windows에서 DLL 오류
+
+**원인**: FFmpeg DLL이 누락됨
+
+**해결**:
+1. 전체 FFmpeg 패키지 다운로드 (essentials 버전)
+2. 모든 DLL 파일이 ffmpeg.exe와 같은 폴더에 있는지 확인
 
 ### Discord 연결 오류
+
 - config.json의 토큰이 올바른지 확인
 - 봇이 서버에 초대되어 있는지 확인
 - 봇에 음성 채널 권한이 있는지 확인
+- 환경 변수 사용 시 `DISCORD_TOKEN`이 올바르게 설정되었는지 확인
 
-### Docker 권한 오류
+### Docker 관련 오류
+
+#### Docker 권한 오류
 ```bash
 # config.json 파일 권한 설정
 chmod 644 config.json
@@ -349,6 +595,37 @@ chmod 644 config.json
 mkdir -p logs
 chmod 755 logs
 ```
+
+#### "Configuration not found" 오류
+
+Docker 실행 시 환경 변수나 config.json이 제공되지 않은 경우:
+```bash
+# 환경 변수 사용
+docker run -d -e DISCORD_TOKEN=your_token registry.ryein.kim/music-bot:latest
+
+# 또는 config.json 마운트
+docker run -d -v $(pwd)/config.json:/app/config.json:ro registry.ryein.kim/music-bot:latest
+```
+
+### GitHub Actions CI/CD 오류
+
+#### "Username and password required" 오류
+
+**원인**: GitHub Secrets이 올바르게 설정되지 않음
+
+**해결**:
+1. GitHub Settings → Secrets 확인
+2. Secret 이름 철자 확인 (대소문자 구분)
+3. Secret 값이 비어있지 않은지 확인
+
+#### "unauthorized: authentication required" 오류
+
+**원인**: 레지스트리 인증 정보가 잘못됨
+
+**해결**:
+1. Docker Registry 로그인 정보 재확인
+2. 토큰 유효기간 확인
+3. 토큰 권한 확인 (push 권한 필요)
 
 ## 📧 연락처
 

@@ -18,11 +18,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # 애플리케이션 파일 복사
-COPY v5_2.py .
-COPY config.json .
-
-# FFmpeg 바이너리 복사 (Windows용이지만 호환성을 위해)
-COPY ffmpeg/ ./ffmpeg/
+COPY musicbot.py .
 
 # 환경 변수 설정
 ENV PYTHONUNBUFFERED=1
@@ -32,5 +28,5 @@ ENV PYTHONPATH=/app
 EXPOSE 8080
 
 # 봇 실행
-CMD ["python", "v5_2.py"]
+CMD ["python", "musicbot.py"]
 

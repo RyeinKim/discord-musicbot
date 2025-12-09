@@ -10,9 +10,41 @@ import os
 import shutil
 from typing import Optional
 
-# config.json 파일 읽기
-with open('config.json') as config_file:
-    config = json.load(config_file)
+# config.json 파일 또는 환경 변수에서 설정 읽기
+def load_config():
+    """
+    우선순위:
+    1. 환경 변수 (DISCORD_TOKEN, COMMAND_PREFIX, OWNER_ID)
+    2. config.json 파일
+    """
+    # 환경 변수 확인
+    token = os.getenv('DISCORD_TOKEN')
+    prefix = os.getenv('COMMAND_PREFIX', '!')
+    owner_id = os.getenv('OWNER_ID')
+
+    # 환경 변수가 있으면 사용
+    if token:
+        print("Using configuration from environment variables")
+        return {
+            'token': token,
+            'prefix': prefix,
+            'owner_id': owner_id
+        }
+
+    # 환경 변수가 없으면 config.json 사용
+    if os.path.exists('config.json'):
+        print("Using configuration from config.json")
+        with open('config.json') as config_file:
+            return json.load(config_file)
+
+    # 둘 다 없으면 에러
+    raise FileNotFoundError(
+        "Configuration not found. Please provide either:\n"
+        "1. Environment variables: DISCORD_TOKEN, COMMAND_PREFIX (optional), OWNER_ID (optional)\n"
+        "2. config.json file with token, prefix, and owner_id"
+    )
+
+config = load_config()
 
 intents = discord.Intents.default()
 intents.message_content = True
