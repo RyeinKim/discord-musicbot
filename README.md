@@ -39,7 +39,7 @@ Discord 음성 채널에서 YouTube 음악을 재생하는 기능이 풍부한 �
 ### 사전 요구사항
 - Python 3.11+
 - Discord Bot Token
-- FFmpeg (플랫폼별 설치 필요)
+- FFmpeg (플랫폼별 설치 필요 - **[설치 가이드 보기](./FFMPEG_SETUP.md)**)
 
 ### 1️⃣ 로컬 실행 (개발)
 
