@@ -772,7 +772,8 @@ async def play_next(channel):
                 def after_playback(error):
                     if error:
                         print(f"재생 중 에러 발생: {error}")
-                        return
+                        # 오류가 발생해도 다음 곡 재생 진행
+
                     # 스킵이 요청되지 않았을 때만 다음 곡 재생
                     if not getattr(bot, 'skip_requested', False):
                         asyncio.run_coroutine_threadsafe(play_next(channel), bot.loop)
